@@ -1,59 +1,64 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../contracts/interfaces/IDiamondCut.sol";
-import "../contracts/facets/DiamondCutFacet.sol";
-import "../contracts/facets/DiamondLoupeFacet.sol";
-import "../contracts/facets/OwnershipFacet.sol";
-import "../contracts/Diamond.sol";
+import "./helpers/DiamondDeployer.sol";
 
-import "./helpers/DiamondUtils.sol";
-
-contract DiamondDeployer is DiamondUtils, IDiamondCut {
-    //contract types of facets to be deployed
-    Diamond diamond;
-    DiamondCutFacet dCutFacet;
-    DiamondLoupeFacet dLoupe;
-    OwnershipFacet ownerF;
-
-    function testDeployDiamond() public {
-        //deploy facets
-        dCutFacet = new DiamondCutFacet();
-        diamond = new Diamond(address(this), address(dCutFacet));
-        dLoupe = new DiamondLoupeFacet();
-        ownerF = new OwnershipFacet();
-
-        //upgrade diamond with facets
-
-        //build cut struct
-        FacetCut[] memory cut = new FacetCut[](2);
-
-        cut[0] = (
-            FacetCut({
-                facetAddress: address(dLoupe),
-                action: FacetCutAction.Add,
-                functionSelectors: generateSelectors("DiamondLoupeFacet")
-            })
-        );
-
-        cut[1] = (
-            FacetCut({
-                facetAddress: address(ownerF),
-                action: FacetCutAction.Add,
-                functionSelectors: generateSelectors("OwnershipFacet")
-            })
-        );
-
-        //upgrade diamond
-        IDiamondCut(address(diamond)).diamondCut(cut, address(0x0), "");
-
-        //call a function
-        DiamondLoupeFacet(address(diamond)).facetAddresses();
+contract NFTTest is DiamondDeployer {
+    function testTokenName() public {
+        assertEq(nftC.name(), "JAyNFT");
     }
 
-    function diamondCut(
-        FacetCut[] calldata _diamondCut,
-        address _init,
-        bytes calldata _calldata
-    ) external override {}
+    function testTokenSymbol() public {
+        assertEq(nftC.symbol(), "JNFT");
+    }
+
+    function testMinting() public {
+        nftC.mint(msg.sender);
+        assertEq(nftC.ownerOf(0), msg.sender);
+        // assertEq(nftInt.tokenURI(0), "https://brknarsy.github.io/erc721-foundry/jsons/1.json");
+    }
+
+    function testBalances() public {
+        testMinting();
+        testMinting();
+        assertEq(nftC.balanceOf(msg.sender), 2);
+    }
+
+    function testInvalidAddress() public {
+        testMinting();
+        vm.expectRevert("ERC721: address zero is not a valid owner");
+        nftC.balanceOf((address(0)));
+    }
+
+    function testOwner() public {
+        testMinting();
+        assertEq(nftC.ownerOf(0), msg.sender);
+    }
+
+    function testApproval() public {
+        address user1 = vm.addr(1232);
+        testMinting();
+        vm.prank(msg.sender);
+        nftC.approve(user1, 0);
+        assertEq(nftC.getApproved(0), user1);
+    }
+
+    function testAllAproval() public {
+        address user1 = vm.addr(1232);
+        testMinting();
+        testMinting();
+        vm.prank(msg.sender);
+        nftC.setApprovalForAll(user1, true);
+
+        assertTrue(nftC.isApprovedForAll(msg.sender, user1));
+    }
+
+    function testTransferFrom() public {
+        address user1 = vm.addr(1232);
+        testMinting();
+        vm.prank(msg.sender);
+        nftC.setApprovalForAll(user1, true);
+        vm.prank(user1);
+        nftC
+    }
 }
