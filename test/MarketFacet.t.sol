@@ -79,7 +79,8 @@ contract MarketPlaceTest is DiamondDeployer {
     function testEmitExecuteEvent() public {
         nftC.mint(creator);
         switchSigner(creator);
-        nftC.setApprovalForAll(spender, true);
+        nftC.setApprovalForAll(address(diamond), true);
+
         marketF.createOrder(0, 1 ether, 5000);
         switchSigner(spender);
         //   vm.expectEmit(true, true, true, false);
