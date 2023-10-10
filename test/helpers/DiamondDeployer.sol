@@ -22,6 +22,12 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
     NFTRC nftC;
     NFTMarketPlace marketF;
 
+    uint256 creatorPriv;
+    uint256 spenderPriv;
+
+    address creator;
+    address spender;
+
     function setUp() public {
         //deploy facets
         dCutFacet = new DiamondCutFacet();
@@ -32,6 +38,9 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
         nft = new NFTRC();
         nftC = NFTRC(address(diamond));
         marketF = NFTMarketPlace(address(diamond));
+
+        (creator, creatorPriv) = mkaddr("CREATOR");
+        (spender, spenderPriv) = mkaddr("SPENDER");
 
         //upgrade diamond with facets
 
@@ -78,4 +87,16 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
     }
 
     function diamondCut(FacetCut[] calldata _diamondCut, address _init, bytes calldata _calldata) external override {}
+
+    function mkaddr(string memory name) public returns (address addr, uint256 privateKey) {
+        privateKey = uint256(keccak256(abi.encodePacked(name)));
+        addr = vm.addr(privateKey);
+        vm.label(addr, name);
+    }
+
+    function switchSigner(address _newSigner) public {
+        vm.startPrank(_newSigner);
+        vm.deal(_newSigner, 3 ether);
+        vm.label(_newSigner, "USER");
+    }
 }

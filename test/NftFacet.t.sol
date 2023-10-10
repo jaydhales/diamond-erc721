@@ -59,6 +59,17 @@ contract NFTTest is DiamondDeployer {
         vm.prank(msg.sender);
         nftC.setApprovalForAll(user1, true);
         vm.prank(user1);
-        nftC
+        nftC.transferFrom(msg.sender, address(this), 0);
+        assertEq(nftC.ownerOf(0), address(this));
+    }
+
+    function testSafeTransferFrom() public {
+        address user1 = vm.addr(1232);
+        testMinting();
+        vm.prank(msg.sender);
+        nftC.setApprovalForAll(user1, true);
+        vm.prank(user1);
+        vm.expectRevert("ERC721: transfer to non ERC721Receiver implementer");
+        nftC.safeTransferFrom(msg.sender, address(this), 0);
     }
 }
